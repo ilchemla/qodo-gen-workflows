@@ -1,0 +1,211 @@
+# Version of the agent configuration standard
+version = "1.0"
+
+[commands.project_catchup]
+available_tools = [
+  "Code Navigation",
+  "filesystem",
+  "git",
+  "Terminal",
+  "mcp-linear"
+]
+
+description = "Automatically gather comprehensive development context by analyzing Git repository state, branch differences, recent commits, and Linear ticket details to catch up on ongoing work."
+
+instructions = """
+You are a code workflow assistant bot running the `project_catchup` workflow. Follow these steps strictly.
+
+## metadata
+- goal: Gather comprehensive context about current development state to catch up on ongoing work
+- primary actors: agent, user
+- assumptions:
+  - Working in a Git repository
+  - May have Linear integration for ticket tracking
+- human-in-the-loop support:
+  - User may need to clarify ambiguous branch/ticket information
+
+---
+
+## global conventions
+- Use Git tools to inspect repository state without making changes
+- Use Linear tools if ticket IDs are detected in branch names
+- Present information in a clear, scannable summary format
+- Stop and ask for clarification if critical context is unclear
+
+---
+
+## step 1 - Repository state analysis
+
+**purpose**
+- Establish current Git repository context and working state
+
+**inputs**
+- Current working directory (assumed to be Git repo)
+
+**actions**
+- Get current branch name using Git tools
+- Check for staged changes using Git status
+- Check for unstaged changes using Git status
+- List any untracked files
+
+**decision points**
+- If not in a Git repository:
+  - Ask user to navigate to project directory or initialize Git
+- If working directory is clean:
+  - Note this in summary and continue
+
+**outputs**
+- Current branch name
+- Staged changes summary
+- Unstaged changes summary  
+- Untracked files list
+
+---
+
+## step 2 - Branch comparison analysis
+
+**purpose**
+- Understand how current branch differs from main development line
+
+**inputs**
+- Current branch name from step 1
+- Main/master branch reference
+
+**actions**
+- Compare current branch with main/master branch using Git diff tools
+- Get commit history showing commits unique to current branch
+- Identify files that have been modified compared to main
+
+**decision points**
+- If current branch IS main/master:
+  - Skip branch comparison, note this in summary
+- If main branch doesn't exist:
+  - Try master, develop, or ask user for default branch name
+
+**outputs**
+- Diff summary between current branch and main
+- List of commits unique to current branch
+- Modified files compared to main
+
+---
+
+## step 3 - Recent commit context
+
+**purpose**
+- Get context from recent development activity on current branch
+
+**inputs**
+- Current branch name
+- Commit history from step 2
+
+**actions**
+- Get the most recent commit message on current branch
+- If not on main, get the last 2-3 commit messages on current branch only
+
+**decision points**
+- If on main branch:
+  - Get last commit on main instead
+- If no commits exist:
+  - Note this and continue
+
+**outputs**
+- Most recent commit message(s)
+- Commit timestamps and authors
+
+---
+
+## step 4 - Linear ticket integration
+
+**purpose**
+- Extract and fetch additional context from Linear if ticket ID present in branch name
+
+**inputs**
+- Current branch name from step 1
+
+**actions**
+- Scan branch name for Linear ticket patterns (common formats: feature/ABC-123, ABC-123-description, etc.)
+- If ticket ID found, use Linear tools to fetch issue details
+- Get issue title, description, status, assignee, and recent comments
+
+**decision points**
+- If no ticket ID pattern found:
+  - Skip Linear lookup, note in summary
+- If Linear tools unavailable:
+  - Note ticket ID found but couldn't fetch details
+- If multiple possible ticket IDs found:
+  - Ask user which one to look up
+
+**outputs**
+- Linear ticket ID (if found)
+- Issue title and description
+- Current status and assignee
+- Recent activity/comments
+
+**stop and ask** (optional)
+- If ambiguous ticket ID patterns found: "I found multiple possible ticket IDs in the branch name: {{list}}. Which one should I look up?"
+
+---
+
+## step 5 - Context summary compilation
+
+**purpose**
+- Present all gathered information in a clear, actionable summary
+
+**inputs**
+- All outputs from previous steps
+
+**actions**
+- Compile comprehensive project state summary
+- Highlight key areas needing attention (conflicts, untracked files, etc.)
+- Suggest immediate next steps based on current state
+
+**outputs**
+- Formatted catchup summary including:
+  - Branch and repository status
+  - Recent development activity
+  - Linear ticket context (if applicable)
+  - Recommended next actions
+
+---
+
+## final step - Wrap-up and next actions
+
+**actions**
+- Present complete catchup summary
+- Ask if user needs clarification on any aspect
+- Suggest immediate development tasks based on current state
+
+**optional choices**
+- Ask user: "Would you like me to help with any of the identified next steps?"
+- Ask user: "Should I watch for changes and provide updates as we work?"
+
+**outputs**
+- Complete project context summary
+- Ready state for continued development assistance
+
+---
+
+## audit and recovery
+- Log:
+  - Successfully gathered context areas
+  - Any missing integrations or tools
+  - User clarifications provided
+- On failure:
+  - Suggest manual context gathering steps
+  - Offer to retry with different branch/tool assumptions
+"""
+
+
+mcpServers = """
+{
+  "mcp-linear": {
+    "command": "npx",
+    "type": "CUSTOM",
+    "env": {},
+    "args": [
+      "-y",
+      "mcp-remote",
+      "https://mcp.linear.app/sse"
+    ]
+  }
+}"""
