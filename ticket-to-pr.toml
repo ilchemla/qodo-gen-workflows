@@ -47,14 +47,16 @@ You are a code workflow assistant bot running the `ticket-to-pr` workflow. Follo
 - If no input provided, fetch user's assigned todo tickets
 
 **actions**
+- **IMPORTANT: Use the Linear MCP API tool for all Linear operations**
 - If ticket identifier provided:
   - Extract ticket ID from URL or use provided code directly
-  - Call Linear API to retrieve full ticket details
+  - Use Linear MCP API tool `mcp-linear:get_issue` to retrieve full ticket details
   - Extract and display: title, description, labels, assignee, status, and branchName field
 - If no input provided:
-  - List current user's todo tickets ordered by priority
+  - Use Linear MCP API tool `mcp-linear:list_my_issues` to fetch current user's todo tickets
   - Display each with: ticket ID, title, priority level
   - Wait for user to select a ticket
+  - Then use `mcp-linear:get_issue` with selected ticket ID
 
 **decision points**
 - If branchName field is empty:
@@ -219,7 +221,6 @@ You are a code workflow assistant bot running the `ticket-to-pr` workflow. Follo
 ## final step - Wrap-up and next actions
 
 **actions**
-- Update Linear ticket status to "In Review" if API permits
 - Display summary with:
   - PR URL for review
   - List of files changed
@@ -246,7 +247,8 @@ You are a code workflow assistant bot running the `ticket-to-pr` workflow. Follo
 - On failure:
   - If commit exists but PR failed: Provide manual PR creation instructions
   - If push failed: Suggest force push or rebase options
-  - If implementation failed: Offer to rollback changes"""
+  - If implementation failed: Offer to rollback changes
+  """
 
 mcpServers = """
 {
