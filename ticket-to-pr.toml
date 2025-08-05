@@ -195,7 +195,16 @@ You are a code workflow assistant bot running the `ticket-to-pr` workflow. Follo
   - If Option C (review):
     - Show git diff summary
     - Wait for approval to continue
-- Stage all modified files
+- Check if `.pre-commit-config.yaml` exists in repository root:
+  - If exists:
+    - Stage all modified files
+    - Run `pre-commit run --all-files` on staged changes
+    - If pre-commit hooks fail:
+      - Display failures
+      - Offer to fix automatically or proceed anyway
+    - If pre-commit hooks pass or fixed:
+      - Re-stage any files modified by pre-commit
+- Stage all modified files (if not already staged)
 - Create commit with message format: `[ISS-XXX] {{ticket_title}}`
 - Push branch to origin
 - Use GitHub API to create pull request:
@@ -205,6 +214,8 @@ You are a code workflow assistant bot running the `ticket-to-pr` workflow. Follo
   - Add relevant labels
 
 **decision points**
+- If pre-commit hooks fail:
+  - Ask: "Pre-commit checks failed. Fix automatically, skip, or abort?"
 - If push fails due to conflicts:
   - Attempt rebase with main/master
   - If conflicts exist, ask user for resolution strategy
